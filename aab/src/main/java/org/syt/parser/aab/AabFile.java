@@ -150,7 +150,7 @@ public class AabFile extends BaseApkFile {
             try {
                 DexClass[] classes = this.parseDexFile(path);
                 this.dexClasses = this.mergeDexClasses(this.dexClasses, classes);
-            } catch (ParserException var4) {
+            } catch (Exception var4) {
                 break;
             }
         }

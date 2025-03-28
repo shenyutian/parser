@@ -45,6 +45,7 @@ public class ApkMetaTranslator implements XmlStreamer {
                 apkMeta.getApplication().setDebuggable(debuggable);
                 String label = attributes.getString("label");
                 if (label != null) {
+                    apkMeta.setLabel(label);
                     apkMeta.getApplication().setLabel(label);
                 }
                 Attribute iconAttr = attributes.get("icon");

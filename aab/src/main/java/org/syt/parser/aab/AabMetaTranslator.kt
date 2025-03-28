@@ -298,15 +298,17 @@ object AabMetaTranslator {
     }
 
     private fun readBundleModule(bundleModule: BundleModule, apkMeta: ApkMeta) {
+
         val appName = apkMeta.label?.split("/")?.last()
         if (appName != null) {
             ResourcesUtils.entries(bundleModule.resourceTable.get()).forEach { entry ->
                 val entryName = entry.entry.name
                 if (appName.equals(entryName)) {
-                    // 多语言没问题，res混淆有问题
+                    // 多语言没问题，todo res混淆 读取不到应用的包名等信息
                     Log.d("entry: $entryName  ${entry.entry.configValueList[0].value.item.str.value}")
                     apkMeta.label = entry.entry.configValueList[0].value.item.str.value
                 }
+                Log.d("entry: $entryName ")
             }
         }
     }

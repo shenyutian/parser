@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author dongliu
  */
-class JSSECertificateParser extends CertificateParser {
+public class JSSECertificateParser extends CertificateParser {
     public JSSECertificateParser(byte[] data) {
         super(data);
     }

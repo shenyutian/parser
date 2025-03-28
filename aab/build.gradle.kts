@@ -22,3 +22,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.3")
 }
+
+tasks.test {
+    useJUnitPlatform()
+}

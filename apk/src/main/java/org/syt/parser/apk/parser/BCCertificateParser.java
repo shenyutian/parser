@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author dongliu
  */
-class BCCertificateParser extends CertificateParser {
+public class BCCertificateParser extends CertificateParser {
 
     private static final Provider provider = new BouncyCastleProvider();
 

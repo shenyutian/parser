@@ -45,26 +45,27 @@ abstract class BaseApkFile {
             var isMintegral = false;
             var isApplovin = false;
             getDexClasses().forEach { dc ->
+                Log.d(dc.toString())
                 if (dc.toString().contains("com/unity3d/player")) {
                     isUnity = true;
                 }
                 if (dc.toString().contains("com/unity3d/ads")) {
-                    isUnityAds = true;
+                    isUnityAds = true
                 }
                 if (dc.toString().contains("com/facebook/ads")) {
-                    isFacebookAds = true;
+                    isFacebookAds = true
                 }
                 if (dc.toString().contains("com/google/ads")) {
-                    isGoogleAdmob = true;
+                    isGoogleAdmob = true
                 }
                 if (dc.toString().contains("com/ironsource")) {
-                    isIronsource = true;
+                    isIronsource = true
                 }
-                if (dc.toString().contains("com/mintegral")) {
-                    isMintegral = true;
+                if (dc.toString().contains("com/mbridge")) {
+                    isMintegral = true
                 }
                 if (dc.toString().contains("com/applovin")) {
-                    isApplovin = true;
+                    isApplovin = true
                 }
             }
             jsonObject.putOpt("isUnityGame", isUnity);
