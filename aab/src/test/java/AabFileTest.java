@@ -2,6 +2,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.syt.parser.aab.AabFile;
 import org.syt.parser.entry.ApkMeta;
+import org.syt.parser.json.JSONException;
 import org.syt.parser.json.JSONObject;
 import org.syt.parser.log.Log;
 
@@ -36,11 +37,11 @@ class AabFileTest {
     }
 
     @Test
-    void getApkInfo() throws IOException {
-        String path = getClass().getClassLoader().getResource("debug.aab").getPath();
+    void getApkInfo() throws IOException, JSONException {
+        String path = getClass().getClassLoader().getResource("qr.aab").getPath();
         AabFile aabFile = new AabFile(path);
         JSONObject info = aabFile.getInfo();
-        Log.d("ApkMeta = " + info);
+        Log.d(info.toString(4));
     }
 
 }
