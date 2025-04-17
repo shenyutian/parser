@@ -6,7 +6,6 @@ import org.syt.parser.base.BaseApkFile;
 import org.syt.parser.entry.*;
 import org.syt.parser.apk.bean.ApkSigner;
 import org.syt.parser.apk.bean.CertificateMeta;
-import org.syt.parser.apk.exception.ParserException;
 import org.syt.parser.apk.parser.CertificateParser;
 import org.syt.parser.apk.parser.DexParser;
 import org.syt.parser.apk.utils.Inputs;
@@ -61,6 +60,27 @@ public class AabFile extends BaseApkFile {
     public ApkMeta getApkMeta() {
         parseManifest();
         return this.apkMeta;
+    }
+
+    @Override
+    @NotNull
+    public List<IconFace> getAllIcons() throws IOException {
+        parseManifest();
+        String[] split = apkMeta.getIcon().split("/");
+        String iconName = split[split.length - 1];
+        Enumeration<? extends ZipEntry> enu = zf.entries();
+        List<IconFace> list = new ArrayList<>();
+        while (enu.hasMoreElements()) {
+            ZipEntry ne = enu.nextElement();
+            if (ne.isDirectory()) {
+                continue;
+            }
+            String name = ne.getName();
+            if ((name.contains("mipmap") || name.contains("drawable")) && name.contains(iconName)) {
+                list.add(new Icon(name, 0, Inputs.readAllAndClose(zf.getInputStream(ne))));
+            }
+        }
+        return list;
     }
 
     private void parseManifest() {

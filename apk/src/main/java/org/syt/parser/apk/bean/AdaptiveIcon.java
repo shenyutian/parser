@@ -1,7 +1,7 @@
 package org.syt.parser.apk.bean;
 
-import org.syt.parser.apk.bean.Icon;
-import org.syt.parser.apk.bean.IconFace;
+import org.syt.parser.entry.Icon;
+import org.syt.parser.entry.IconFace;
 
 import java.io.Serializable;
 

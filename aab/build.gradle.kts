@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "org.syt.parser.aab"
-version = "1.0-SNAPSHOT"
+version = "1.1-SNAPSHOT"
 
 dependencies {
     implementation(project(":base"))

@@ -15,6 +15,8 @@ import org.syt.parser.apk.utils.Unsigned;
 import org.syt.parser.base.BaseApkFile;
 import org.syt.parser.entry.ApkMeta;
 import org.syt.parser.entry.DexClass;
+import org.syt.parser.entry.Icon;
+import org.syt.parser.entry.IconFace;
 import org.syt.parser.json.JSONException;
 import org.syt.parser.json.JSONObject;
 import org.syt.parser.log.Log;
@@ -402,6 +404,7 @@ public abstract class AbstractApkFile extends BaseApkFile implements Closeable {
      *
      * @return icon files.
      */
+    @Override
     public List<IconFace> getAllIcons() throws IOException {
         List<IconPath> iconPaths = getIconPaths();
         if (iconPaths.isEmpty()) {

@@ -1,4 +1,4 @@
-package org.syt.parser.apk.bean;
+package org.syt.parser.entry;
 
 import java.io.Serializable;
 

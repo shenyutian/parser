@@ -1,7 +1,6 @@
-package org.syt.parser.apk.bean;
+package org.syt.parser.entry;
 
 import org.jetbrains.annotations.Nullable;
-import org.syt.parser.apk.bean.IconFace;
 
 import java.io.Serializable;
 

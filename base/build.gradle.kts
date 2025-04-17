@@ -3,4 +3,4 @@ plugins {
 }
 
 group = "org.syt.parser.base"
-version = "1.0.0"
+version = "1.1"

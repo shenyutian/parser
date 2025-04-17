@@ -2,6 +2,7 @@ package org.syt.parser.base
 
 import org.syt.parser.entry.ApkMeta
 import org.syt.parser.entry.DexClass
+import org.syt.parser.entry.IconFace
 import org.syt.parser.json.JSONObject
 import org.syt.parser.log.Log
 import org.syt.parser.log.Log.e
@@ -18,6 +19,9 @@ abstract class BaseApkFile {
 
     @Throws(IOException::class)
     abstract fun getDexClasses() : Array<DexClass>
+
+    @Throws(IOException::class)
+    abstract fun getAllIcons() : List<IconFace>
 
     open fun getInfo() : JSONObject {
         val jsonObject = JSONObject();
