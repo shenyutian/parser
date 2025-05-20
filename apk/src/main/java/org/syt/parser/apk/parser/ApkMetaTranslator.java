@@ -10,6 +10,7 @@ import org.syt.parser.apk.struct.resource.ResourceEntry;
 import org.syt.parser.apk.struct.resource.ResourceTable;
 import org.syt.parser.apk.struct.resource.Type;
 import org.syt.parser.apk.struct.xml.*;
+import org.syt.parser.log.Log;
 
 import java.util.*;
 
@@ -169,7 +170,11 @@ public class ApkMetaTranslator implements XmlStreamer {
                 component = service;
                 break;
             case "activity-alias":
-                //TODO: activity-alias
+                ActivityAlias activityAlias = new ActivityAlias();
+                fillComponent(attributes, activityAlias);
+                component = activityAlias;
+                apkMeta.addActivityAlias(activityAlias);
+                break;
             case "activity":
                 Activity activity = new Activity();
                 fillComponent(attributes, activity);
