@@ -89,4 +89,13 @@ public class ApkFileTest {
             assertTrue(apkMeta.getApplication().getDebuggable());
         }
     }
+
+    @Test
+    public void testLauncher() throws IOException {
+        String path = getClass().getClassLoader().getResource("apks/launcher.apk").getPath();
+        try (ApkFile apkFile = new ApkFile(path)) {
+            ApkMeta apkMeta = apkFile.getApkMeta();
+            assertEquals("com.unity3d.player.UnityPlayerActivity", apkMeta.getLauncher().getName());
+        }
+    }
 }

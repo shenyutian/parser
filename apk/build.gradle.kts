@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.syt.parser.apk"
-version = "1.1-SNAPSHOT"
+version = "1.2-SNAPSHOT"
 
 dependencies {
     implementation(project(":base"))
