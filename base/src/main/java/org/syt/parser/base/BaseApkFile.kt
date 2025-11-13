@@ -5,10 +5,7 @@ import org.syt.parser.entry.DexClass
 import org.syt.parser.entry.IconFace
 import org.syt.parser.json.JSONObject
 import org.syt.parser.log.Log
-import org.syt.parser.log.Log.e
 import java.io.IOException
-import java.security.PublicKey
-
 
 /*
  * zhulei 2025/3/16-22:57
@@ -41,44 +38,34 @@ abstract class BaseApkFile {
         }
 
         try {
-            var isUnity = false;
-            var isUnityAds = false;
-            var isFacebookAds = false;
-            var isGoogleAdmob = false;
-            var isIronsource = false;
-            var isMintegral = false;
-            var isApplovin = false;
+            val adFrameworks = mapOf(
+                "isUnityGame" to "com/unity3d/player",
+                "isUnityAds" to "com/unity3d/ads",
+                "isFacebookAds" to "com/facebook/ads",
+                "isGoogleAdmob" to "com/google/ads",
+                "isIronsource" to "com/ironsource",
+                "isMintegral" to "com/mbridge",
+                "isApplovin" to "com/applovin",
+                "isAdjust" to "com/adjust/sdk",
+                "isAppsflyer" to "com/appsflyer",
+            )
+            
+            val results = mutableMapOf<String, Boolean>().apply {
+                adFrameworks.forEach { (key, _) -> this[key] = false }
+            }
+            
             getDexClasses().forEach { dc ->
                 Log.d(dc.toString())
-                if (dc.toString().contains("com/unity3d/player")) {
-                    isUnity = true;
-                }
-                if (dc.toString().contains("com/unity3d/ads")) {
-                    isUnityAds = true
-                }
-                if (dc.toString().contains("com/facebook/ads")) {
-                    isFacebookAds = true
-                }
-                if (dc.toString().contains("com/google/ads")) {
-                    isGoogleAdmob = true
-                }
-                if (dc.toString().contains("com/ironsource")) {
-                    isIronsource = true
-                }
-                if (dc.toString().contains("com/mbridge")) {
-                    isMintegral = true
-                }
-                if (dc.toString().contains("com/applovin")) {
-                    isApplovin = true
+                adFrameworks.forEach { (key, path) ->
+                    if (!results[key]!! && dc.toString().contains(path)) {
+                        results[key] = true
+                    }
                 }
             }
-            jsonObject.putOpt("isUnityGame", isUnity);
-            jsonObject.putOpt("isUnityAds", isUnityAds);
-            jsonObject.putOpt("isFacebookAds", isFacebookAds);
-            jsonObject.putOpt("isGoogleAdmob", isGoogleAdmob);
-            jsonObject.putOpt("isIronsource", isIronsource);
-            jsonObject.putOpt("isMintegral", isMintegral);
-            jsonObject.putOpt("isApplovin", isApplovin);
+            
+            results.forEach { (key, value) ->
+                jsonObject.putOpt(key, value)
+            }
         } catch (e: Exception) {
             Log.e(e);
         }
