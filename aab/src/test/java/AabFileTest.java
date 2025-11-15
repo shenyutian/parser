@@ -51,7 +51,7 @@ class AabFileTest {
 
     @Test
     void getApkInfo() throws IOException, JSONException {
-        String path = getClass().getClassLoader().getResource("BlockBreakDoge.aab").getPath();
+        String path = getClass().getClassLoader().getResource("debug.aab").getPath();
         AabFile aabFile = new AabFile(path);
         JSONObject info = aabFile.getInfo();
         Log.d(info.toString(4));
@@ -59,7 +59,7 @@ class AabFileTest {
 
     @Test
     void getICons() throws Exception {
-        String path = getClass().getClassLoader().getResource("BlockBreakDoge.aab").getPath();
+        String path = getClass().getClassLoader().getResource("debug.aab").getPath();
         AabFile aabFile = new AabFile(path);
         for (IconFace icon : aabFile.getAllIcons()) {
             Log.d(icon.toString());

@@ -48,6 +48,8 @@ abstract class BaseApkFile {
                 "isApplovin" to "com/applovin",
                 "isAdjust" to "com/adjust/sdk",
                 "isAppsflyer" to "com/appsflyer",
+                "isFirebaseAnalytics" to "com/google/firebase/analytics/FirebaseAnalytics",
+                "isFacebookAnalytics" to "com/facebook/appevents",
             )
             
             val results = mutableMapOf<String, Boolean>().apply {

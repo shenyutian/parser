@@ -1,6 +1,6 @@
 plugins {
     // 应用到所有子项目的插件
-    kotlin("jvm") version "1.9.20" apply false
+    kotlin("jvm") version "2.1.0" apply false
 }
 
 allprojects {
