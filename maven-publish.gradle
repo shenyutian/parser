@@ -1,0 +1,112 @@
+/**
+ * Maven 发布配置
+ * 用于将模块发布到Maven仓库
+ */
+
+apply plugin: 'maven-publish'
+
+// 从 local.properties 读取 Maven 仓库配置
+def params = new Properties()
+params.load(new FileInputStream(rootProject.file("local.properties")))
+
+// Maven 仓库配置
+def MAVEN_REPO_RELEASE_URL = params.getProperty('mavenUrl', 'http://nexus.fxbusiness.cn/repository/maven-releases/')
+def MAVEN_REPO_SNAPSHOT_URL = params.getProperty('mavenSnaUrl', 'http://nexus.fxbusiness.cn/repository/maven-snapshots/')
+def MAVEN_USER = params.getProperty('user', 'dev')
+def MAVEN_PASSWORD = params.getProperty('password', '')
+
+// 获取版本信息
+def getVersionName() {
+    if (project.hasProperty('moduleVersion')) {
+        return project.moduleVersion
+    }
+    return project.version.toString()
+}
+
+def getArtifactId() {
+    if (project.hasProperty('artifactId')) {
+        return project.artifactId
+    }
+    return project.name
+}
+
+def getGroupId() {
+    if (project.hasProperty('groupId') && project.groupId != null && !project.groupId.isEmpty()) {
+        return project.groupId
+    }
+    return project.group.toString()
+}
+
+// 判断是否为快照版本
+def isSnapshot() {
+    return getVersionName().endsWith('-SNAPSHOT')
+}
+
+// 创建源码 JAR 任务
+task sourceJar(type: Jar) {
+    if (project.plugins.hasPlugin('com.android.library')) {
+        from android.sourceSets.main.java.srcDirs
+    } else if (project.plugins.hasPlugin('java-library') || project.plugins.hasPlugin('org.jetbrains.kotlin.jvm')) {
+        from sourceSets.main.allJava
+    }
+    archiveClassifier.set('sources')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// 创建 javadoc JAR 任务
+task javadocJar(type: Jar) {
+    archiveClassifier.set('javadoc')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    doLast {
+        println "跳过 javadoc 生成"
+    }
+}
+
+// 配置发布
+afterEvaluate {
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = getGroupId()
+                artifactId = getArtifactId()
+                version = getVersionName()
+
+                if (project.plugins.hasPlugin('com.android.library')) {
+                    // Android Library 项目
+                    artifact bundleReleaseAar
+                    artifact sourceJar
+                    artifact javadocJar
+                } else if (project.plugins.hasPlugin('java-library') || project.plugins.hasPlugin('org.jetbrains.kotlin.jvm')) {
+                    // Java/Kotlin Library 项目
+                    from components.java
+                    artifact sourceJar
+                    artifact javadocJar
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = "nexus"
+                url = isSnapshot() ? MAVEN_REPO_SNAPSHOT_URL : MAVEN_REPO_RELEASE_URL
+                allowInsecureProtocol = true
+                credentials {
+                    username = MAVEN_USER
+                    password = MAVEN_PASSWORD
+                }
+            }
+        }
+    }
+}
+
+// 添加发布任务
+task publishToMaven {
+    group = 'publishing'
+    description = '发布模块到Maven仓库'
+    dependsOn 'publishMavenPublicationToNexusRepository'
+
+    doLast {
+        println "模块 ${getArtifactId()}:${getVersionName()} 发布完成"
+        println "仓库地址: ${isSnapshot() ? MAVEN_REPO_SNAPSHOT_URL : MAVEN_REPO_RELEASE_URL}"
+    }
+}

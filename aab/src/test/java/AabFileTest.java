@@ -1,11 +1,11 @@
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.syt.parser.aab.AabFile;
-import org.syt.parser.entry.ApkMeta;
-import org.syt.parser.entry.IconFace;
-import org.syt.parser.json.JSONException;
-import org.syt.parser.json.JSONObject;
-import org.syt.parser.log.Log;
+import org.apk.parser.aab.AabFile;
+import org.apk.parser.entry.ApkMeta;
+import org.apk.parser.entry.IconFace;
+import org.apk.parser.json.JSONException;
+import org.apk.parser.json.JSONObject;
+import org.apk.parser.log.Log;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

@@ -1,8 +1,8 @@
 import org.junit.jupiter.api.Test;
-import org.syt.parser.apk.bean.ApkSigner;
-import org.syt.parser.apk.bean.CertificateMeta;
-import org.syt.parser.apk.ApkFile;
-import org.syt.parser.entry.ApkMeta;
+import org.apk.parser.apk.bean.ApkSigner;
+import org.apk.parser.apk.bean.CertificateMeta;
+import org.apk.parser.apk.ApkFile;
+import org.apk.parser.entry.ApkMeta;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;

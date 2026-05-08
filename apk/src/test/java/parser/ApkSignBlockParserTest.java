@@ -1,8 +1,8 @@
 package parser;
 
 import org.junit.jupiter.api.Test;
-import org.syt.parser.apk.utils.Inputs;
-import org.syt.parser.apk.parser.ApkSignBlockParser;
+import org.apk.parser.apk.utils.Inputs;
+import org.apk.parser.apk.parser.ApkSignBlockParser;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

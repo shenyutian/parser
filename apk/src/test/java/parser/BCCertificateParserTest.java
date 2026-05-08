@@ -1,10 +1,10 @@
 package parser;
 
 import org.junit.jupiter.api.Test;
-import org.syt.parser.apk.bean.CertificateMeta;
-import org.syt.parser.apk.parser.BCCertificateParser;
-import org.syt.parser.apk.parser.CertificateParser;
-import org.syt.parser.apk.utils.Inputs;
+import org.apk.parser.apk.bean.CertificateMeta;
+import org.apk.parser.apk.parser.BCCertificateParser;
+import org.apk.parser.apk.parser.CertificateParser;
+import org.apk.parser.apk.utils.Inputs;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.util.List;

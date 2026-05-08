@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
 }
 
-group = "org.syt.parser.aab"
+group = "org.apk.parser"
 version = "1.1-SNAPSHOT"
 
 dependencies {
@@ -26,3 +26,5 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+apply(from = rootProject.file("maven-publish.gradle"))

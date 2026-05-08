@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm")
 }
 
-group = "org.syt.parser.apk"
+group = "org.apk.parser"
 version = "1.2-SNAPSHOT"
 
 dependencies {
@@ -26,3 +26,5 @@ tasks.test {
 kotlin {
     jvmToolchain(17)
 }
+
+apply(from = rootProject.file("maven-publish.gradle"))

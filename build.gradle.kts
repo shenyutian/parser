@@ -4,7 +4,7 @@ plugins {
 }
 
 allprojects {
-    group = "org.syt.parser"
+    group = "org.apk.parser"
     version = "1.0.0"
 
     repositories {

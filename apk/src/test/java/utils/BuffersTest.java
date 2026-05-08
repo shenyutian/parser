@@ -1,7 +1,7 @@
 package utils;
 
 import org.junit.jupiter.api.Test;
-import org.syt.parser.apk.utils.Buffers;
+import org.apk.parser.apk.utils.Buffers;
 
 import java.nio.ByteBuffer;
 
