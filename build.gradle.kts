@@ -1,6 +1,9 @@
 plugins {
     // 应用到所有子项目的插件
     kotlin("jvm") version "2.1.0" apply false
+    // Android App 模块（:app）所需插件，仅在 :app 中真正 apply
+    id("com.android.application") version "8.7.3" apply false
+    kotlin("android") version "2.1.0" apply false
 }
 
 allprojects {

@@ -2,6 +2,7 @@ package org.apk.parser.apk;
 
 import org.jetbrains.annotations.NotNull;
 import org.apk.parser.apk.bean.ApkSignStatus;
+import org.apk.parser.apk.utils.ApkSignatureUtil;
 import org.apk.parser.apk.utils.Inputs;
 import org.apk.parser.json.JSONException;
 import org.apk.parser.json.JSONObject;
@@ -168,6 +169,11 @@ public class ApkFile extends AbstractApkFile implements Closeable {
     }
 
     @Override
+    protected ApkSignatureUtil.ApkSignatureResult readSignatureInfo() throws Exception {
+        return ApkSignatureUtil.readApkSignatureInfo(apkFile);
+    }
+
+    @Override
     @NotNull
     public JSONObject getInfo() {
         JSONObject jsonObject = super.getInfo();
@@ -175,6 +181,22 @@ public class ApkFile extends AbstractApkFile implements Closeable {
         try {
             jsonObject.putOpt("apkSize", apkFile.length());
             jsonObject.putOpt("apkFileMd5", MD5.toMd5(apkFile));
+            jsonObject.putOpt("apkFileSha256", MD5.toSha256(apkFile));
+
+            // 统计 zip 条目数量，以及所有条目解压后的大小总和
+            long zipEntryCount = 0;
+            long zipUncompressedSize = 0;
+            Enumeration<? extends ZipEntry> enu = zf.entries();
+            while (enu.hasMoreElements()) {
+                ZipEntry ne = enu.nextElement();
+                zipEntryCount++;
+                long size = ne.getSize();
+                if (size > 0) {
+                    zipUncompressedSize += size;
+                }
+            }
+            jsonObject.putOpt("zipEntryCount", zipEntryCount);
+            jsonObject.putOpt("zipUncompressedSize", zipUncompressedSize);
         } catch (JSONException e) {
             Log.e(e);
         }

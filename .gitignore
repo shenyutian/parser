@@ -4,11 +4,14 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### 私密配置与签名文件（含 maven 发布凭据 / release 签名密码，禁止入库） ###
+local.properties
+app/keystore/
+*.jks
+*.keystore
+
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr

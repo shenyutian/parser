@@ -2,6 +2,7 @@ package org.apk.parser.apk;
 
 import org.jetbrains.annotations.NotNull;
 import org.apk.parser.apk.bean.ApkSignStatus;
+import org.apk.parser.apk.utils.ApkSignatureUtil;
 import org.apk.parser.apk.utils.Inputs;
 
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,12 @@ public class ApksFile extends AbstractApkFile implements Closeable {
                 }
                 // 如果直接解压，然后读取，内存会好一点
             }
+        }
+        // 让 base.apk 排在最前：AndroidManifest.xml / resources.arsc 等通过 getFileData 取第一个匹配，
+        // 若 config 分片排在前面会读到分片的残缺 manifest（包名有、label/version 缺失），故基准包置顶。
+        ByteArrayApkFile base = getBaseApkFile();
+        if (base != null && apksFiles.remove(base)) {
+            apksFiles.add(0, base);
         }
     }
 
@@ -189,17 +196,71 @@ public class ApksFile extends AbstractApkFile implements Closeable {
     }
 
     @Override
+    protected ApkSignatureUtil.ApkSignatureResult readSignatureInfo() throws Exception {
+        // apks 外层包不含 APK Signing Block，签名信息取自内部的 base.apk 字节
+        ByteArrayApkFile baseApk = getBaseApkFile();
+        byte[] baseData = baseApk == null ? null : baseApk.getApkData();
+        if (baseData == null) {
+            return null;
+        }
+        return ApkSignatureUtil.readApkSignatureInfo(baseData);
+    }
+
+    @Override
     @NotNull
     public JSONObject getInfo() {
         JSONObject jsonObject = super.getInfo();
 
         try {
-            jsonObject.putOpt("apkSize", apksFile.length());
-            jsonObject.putOpt("apkFileMd5", MD5.toMd5(apksFile));
+            // 优先取其中 base.apk 的文件参数；找不到时回退到整个 apks 包
+            ByteArrayApkFile baseApk = getBaseApkFile();
+            byte[] baseData = baseApk == null ? null : baseApk.getApkData();
+            if (baseData != null) {
+                jsonObject.putOpt("apkSize", baseData.length);
+                jsonObject.putOpt("apkFileMd5", MD5.toMd5(baseData));
+                jsonObject.putOpt("apkFileSha256", MD5.toSha256Hex(baseData));
+            } else {
+                jsonObject.putOpt("apkSize", apksFile.length());
+                jsonObject.putOpt("apkFileMd5", MD5.toMd5(apksFile));
+                jsonObject.putOpt("apkFileSha256", MD5.toSha256(apksFile));
+            }
         } catch (JSONException e) {
             Log.e(e);
         }
 
         return jsonObject;
+    }
+
+    /**
+     * 查找 apks 包中的 base.apk。
+     * 依次匹配：文件名等于 base.apk（如 xapk）、包含 base-master（如 bundletool 拆分包）、包含 base；
+     * 都找不到时回退到体积最大的 .apk 文件。
+     */
+    @Nullable
+    private ByteArrayApkFile getBaseApkFile() {
+        ByteArrayApkFile containsBase = null;
+        ByteArrayApkFile largest = null;
+        for (ByteArrayApkFile file : apksFiles) {
+            String name = file.getFileName();
+            if (name == null) {
+                continue;
+            }
+            String simpleName = name.substring(name.lastIndexOf('/') + 1).toLowerCase();
+            if ("base.apk".equals(simpleName) || simpleName.contains("base-master")) {
+                return file;
+            }
+            if (containsBase == null && simpleName.contains("base")) {
+                containsBase = file;
+            }
+            byte[] data = file.getApkData();
+            if (data == null) {
+                continue;
+            }
+            byte[] largestData = largest == null ? null : largest.getApkData();
+            if (largestData == null || data.length > largestData.length) {
+                largest = file;
+            }
+        }
+        return containsBase != null ? containsBase : largest;
     }
 }

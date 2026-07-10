@@ -10,6 +10,7 @@ import org.apk.parser.apk.struct.resource.ResourceTable;
 import org.apk.parser.apk.struct.signingv2.ApkSigningBlock;
 import org.apk.parser.apk.struct.signingv2.SignerBlock;
 import org.apk.parser.apk.struct.zip.EOCD;
+import org.apk.parser.apk.utils.ApkSignatureUtil;
 import org.apk.parser.apk.utils.Buffers;
 import org.apk.parser.apk.utils.Unsigned;
 import org.apk.parser.base.BaseApkFile;
@@ -17,6 +18,7 @@ import org.apk.parser.entry.ApkMeta;
 import org.apk.parser.entry.DexClass;
 import org.apk.parser.entry.Icon;
 import org.apk.parser.entry.IconFace;
+import org.apk.parser.json.JSONArray;
 import org.apk.parser.json.JSONException;
 import org.apk.parser.json.JSONObject;
 import org.apk.parser.log.Log;
@@ -197,7 +199,6 @@ public abstract class AbstractApkFile extends BaseApkFile implements Closeable {
 
             PublicKey publicKey = certificate.getPublicKey();
             jsonObject.putOpt("sign", MD5.toHexString(sign_data).replace("\n", ""));
-            jsonObject.putOpt("sign", MD5.toHexString(sign_data).replace("\n", ""));
             jsonObject.putOpt("SHA1", encoder.encodeToString(MD5.toSha1(publicKey.getEncoded())));
             jsonObject.putOpt("SHA256", encoder.encodeToString(MD5.toSha256(publicKey.getEncoded())));
             jsonObject.putOpt("fbkey", encoder.encodeToString(MD5.toSha1(certificate.getEncoded())));
@@ -205,7 +206,49 @@ public abstract class AbstractApkFile extends BaseApkFile implements Closeable {
         } catch (Exception e) {
             Log.e(e);
         }
+
+        try {
+            // 补充更详细的签名信息：v1/v2/v3 各方案的签名 hex、签名主体、发行者，以及 apk 文件大小与摘要
+            ApkSignatureUtil.ApkSignatureResult signatureResult = readSignatureInfo();
+            if (signatureResult != null) {
+                jsonObject.putOpt("signatureInfo", signatureResultToJson(signatureResult));
+            }
+        } catch (Exception e) {
+            Log.e(e);
+        }
+
         return jsonObject;
+    }
+
+    /**
+     * 返回用于详细签名解析的数据源结果，由各子类根据自身持有的 File 或 byte[] 提供。
+     * 默认返回 null，即不输出 signatureInfo 字段。
+     */
+    protected ApkSignatureUtil.ApkSignatureResult readSignatureInfo() throws Exception {
+        return null;
+    }
+
+    /**
+     * 把 {@link ApkSignatureUtil.ApkSignatureResult} 转成结构化 JSON。
+     * 注意：自定义 JSON 库不会自动序列化 List/bean，signatures 必须手动构建 JSONArray。
+     */
+    private static JSONObject signatureResultToJson(ApkSignatureUtil.ApkSignatureResult result) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.putOpt("apkLength", result.apkLength);
+        json.putOpt("apkMd5", result.apkMd5);
+        json.putOpt("apkSha256", result.apkSha256);
+
+        JSONArray signatures = new JSONArray();
+        for (ApkSignatureUtil.SignatureInfo info : result.signatures) {
+            JSONObject item = new JSONObject();
+            item.putOpt("scheme", info.scheme);
+            item.putOpt("principal", info.principal);
+            item.putOpt("issuer", info.issuer);
+            item.putOpt("signature", info.signature);
+            signatures.put(item);
+        }
+        json.putOpt("signatures", signatures);
+        return json;
     }
 
     /**

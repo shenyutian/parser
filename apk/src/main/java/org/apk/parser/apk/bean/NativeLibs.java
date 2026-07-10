@@ -34,7 +34,7 @@ public class NativeLibs implements BaseBean {
         this.libs.add(new Libs(name, size));
     }
 
-    static class Libs implements BaseBean {
+    public static class Libs implements BaseBean {
         private String name;
         private long size;
 
@@ -62,8 +62,12 @@ public class NativeLibs implements BaseBean {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Libs libs = (Libs) o;
             return size == libs.size && Objects.equals(name, libs.name);
         }

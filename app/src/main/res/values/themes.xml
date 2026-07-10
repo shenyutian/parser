@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用主题，基于 Material 3 DayNight -->
+    <style name="Theme.ParserApp" parent="Theme.Material3.DayNight" />
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 默认禁止明文流量；仅放行安装包上传所用的明文 HTTP 域名 -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">spms.joy-mind.cn</domain>
+    </domain-config>
+</network-security-config>

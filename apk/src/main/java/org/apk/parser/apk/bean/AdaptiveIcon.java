@@ -41,18 +41,28 @@ public class AdaptiveIcon implements IconFace, Serializable {
                 '}';
     }
 
+    /**
+     * 优先取前景层，缺失前景层的自适应图标（部分应用只提供背景层）回退到背景层
+     */
+    private Icon preferredLayer() {
+        return foreground != null ? foreground : background;
+    }
+
     @Override
     public boolean isFile() {
-        return foreground.isFile();
+        Icon icon = preferredLayer();
+        return icon != null && icon.isFile();
     }
 
     @Override
     public byte[] getData() {
-        return foreground.getData();
+        Icon icon = preferredLayer();
+        return icon == null ? null : icon.getData();
     }
 
     @Override
     public String getPath() {
-        return foreground.getPath();
+        Icon icon = preferredLayer();
+        return icon == null ? null : icon.getPath();
     }
 }

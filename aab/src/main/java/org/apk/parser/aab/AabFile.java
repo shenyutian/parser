@@ -145,22 +145,6 @@ public class AabFile extends BaseApkFile {
             Log.e(e);
         }
 
-        try {
-            byte[] sign_data = getApkSingers().get(0).getCertificateMetas().get(0).getData();
-            Certificate certificate = java.security.cert.CertificateFactory.getInstance("X.509")
-                    .generateCertificate(new java.io.ByteArrayInputStream(sign_data));
-
-            Base64.Encoder encoder = Base64.getEncoder();
-
-            PublicKey publicKey = certificate.getPublicKey();
-            info.putOpt("sign", MD5.toHexString(sign_data).replace("\n", ""));
-            info.putOpt("SHA1", encoder.encodeToString(MD5.toSha1(publicKey.getEncoded())));
-            info.putOpt("SHA256", encoder.encodeToString(MD5.toSha256(publicKey.getEncoded())));
-            info.putOpt("fbkey", encoder.encodeToString(MD5.toSha1(certificate.getEncoded())));
-        } catch (Exception e) {
-            Log.e(e);
-        }
-
         return info;
     }
 

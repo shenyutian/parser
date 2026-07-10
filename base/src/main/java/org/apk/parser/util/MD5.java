@@ -28,12 +28,49 @@ public class MD5 {
         return result;
     }
 
+    public static String toMd5(byte[] bytes) {
+        try {
+            MessageDigest algorithm = MessageDigest.getInstance("MD5");
+            algorithm.reset();
+            algorithm.update(bytes);
+            return toHexString(algorithm.digest());
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
+    public static String toSha256Hex(byte[] bytes) {
+        byte[] digest = toSha256(bytes);
+        return digest == null ? null : toHexString(digest);
+    }
+
     public static String toMd5(File f) {
         FileInputStream in = null;
         try {
             in = new FileInputStream(f);
             byte[] buff = new byte[1024 * 32];
             MessageDigest algorithm = MessageDigest.getInstance("MD5");
+            algorithm.reset();
+
+            int len = in.read(buff);
+            while (len > 0) {
+                algorithm.update(buff, 0, len);
+                len = in.read(buff);
+            }
+            return toHexString(algorithm.digest());
+        } catch (Exception e) {
+        } finally {
+            CLOSE(in);
+        }
+        return null;
+    }
+
+    public static String toSha256(File f) {
+        FileInputStream in = null;
+        try {
+            in = new FileInputStream(f);
+            byte[] buff = new byte[1024 * 32];
+            MessageDigest algorithm = MessageDigest.getInstance("SHA-256");
             algorithm.reset();
 
             int len = in.read(buff);

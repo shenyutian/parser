@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">包体解析</string>
+    <string name="app_icon">应用图标</string>
+    <string name="select_file">选择安装包（apk / apks）</string>
+    <string name="installed_count">共 %1$d 个已安装应用</string>
+    <string name="search_hint">搜索应用名 / 包名</string>
+    <string name="item_meta">%1$s · %2$d 天前 · SDK %3$d</string>
+    <string name="loading">加载中…</string>
+    <string name="upload_result">上传解析结果</string>
+    <string name="uploading">上传中…</string>
+    <string name="upload_success">上传成功（HTTP %1$d）</string>
+    <string name="upload_failed">上传失败：%1$s</string>
+    <string name="upload_endpoint_not_configured">尚未配置服务端地址，请在 UploadConfig 中设置 ENDPOINT</string>
+    <string name="share_result">分享解析结果</string>
+    <string name="share_chooser_title">分享包体解析结果</string>
+    <string name="cert_issuer">发行者：%1$s</string>
+    <string name="export_apk">导出安装包</string>
+    <string name="exporting">导出中…</string>
+    <string name="export_success">已导出到 Downloads：%1$s</string>
+    <string name="export_failed">导出失败：%1$s</string>
+    <string name="export_no_source">未找到可导出的安装包文件</string>
+    <string name="export_need_permission">需要存储权限才能导出到 Downloads</string>
+    <string name="upload_apk">上传安装包</string>
+    <string name="uploading_apk">上传安装包中…</string>
+    <string name="upload_apk_success">上传成功，下载链接：\n%1$s</string>
+    <string name="upload_apk_failed">上传安装包失败：%1$s</string>
+    <string name="upload_apk_no_source">未找到可上传的安装包文件</string>
+</resources>
+

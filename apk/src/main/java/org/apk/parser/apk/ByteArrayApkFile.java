@@ -2,10 +2,12 @@ package org.apk.parser.apk;
 
 import org.jetbrains.annotations.NotNull;
 import org.apk.parser.apk.bean.ApkSignStatus;
+import org.apk.parser.apk.utils.ApkSignatureUtil;
 import org.apk.parser.apk.utils.Inputs;
 import org.apk.parser.json.JSONException;
 import org.apk.parser.json.JSONObject;
 import org.apk.parser.log.Log;
+import org.apk.parser.util.MD5;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -41,6 +43,13 @@ public class ByteArrayApkFile extends AbstractApkFile implements Closeable {
 
     public String getFileName() {
         return fileName;
+    }
+
+    /**
+     * 获取该 apk 的原始字节数据
+     */
+    public byte[] getApkData() {
+        return apkData;
     }
 
     @Override
@@ -125,13 +134,42 @@ public class ByteArrayApkFile extends AbstractApkFile implements Closeable {
     }
 
     @Override
+    protected ApkSignatureUtil.ApkSignatureResult readSignatureInfo() throws Exception {
+        if (apkData == null) {
+            return null;
+        }
+        return ApkSignatureUtil.readApkSignatureInfo(apkData);
+    }
+
+    @Override
     @NotNull
     public JSONObject getInfo() {
         JSONObject jsonObject = super.getInfo();
 
         try {
             jsonObject.putOpt("apkSize", apkData.length);
+            jsonObject.putOpt("apkFileMd5", MD5.toMd5(apkData));
+            jsonObject.putOpt("apkFileSha256", MD5.toSha256Hex(apkData));
+
+            // 统计 zip 条目数量，以及所有条目解压后的大小总和
+            long zipEntryCount = 0;
+            long zipUncompressedSize = 0;
+            try (InputStream in = new ByteArrayInputStream(apkData);
+                 ZipInputStream zis = new ZipInputStream(in)) {
+                ZipEntry entry;
+                while ((entry = zis.getNextEntry()) != null) {
+                    zipEntryCount++;
+                    long size = entry.getSize();
+                    if (size > 0) {
+                        zipUncompressedSize += size;
+                    }
+                }
+            }
+            jsonObject.putOpt("zipEntryCount", zipEntryCount);
+            jsonObject.putOpt("zipUncompressedSize", zipUncompressedSize);
         } catch (JSONException e) {
+            Log.e(e);
+        } catch (IOException e) {
             Log.e(e);
         }
 
