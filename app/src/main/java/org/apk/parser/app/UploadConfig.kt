@@ -13,5 +13,10 @@ object UploadConfig {
      */
     const val APK_UPLOAD_ENDPOINT = "http://spms.joy-mind.cn/minio/file/upload"
 
+    /**
+     * APK 摘要与签名信息上传地址。切换正式环境时只需替换此配置。
+     */
+    const val SIGNATURE_ENDPOINT = "http://172.16.60.77:8084/xy/app/updateApkHashByPkg"
+
     fun isConfigured(): Boolean = !ENDPOINT.contains("your-server.example.com")
 }

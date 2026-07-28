@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -29,8 +30,14 @@ import java.io.File
  */
 class AppActivity : AppCompatActivity() {
 
+    companion object {
+        private const val TAG = "AppActivity"
+        private const val LOG_CHUNK_SIZE = 3_000
+    }
+
     private var filePath: String? = null
     private var parsedInfoJson: String? = null
+    private var signatureUploadJson: String? = null
 
     private lateinit var progress: ProgressBar
     private lateinit var tvAppInfo: TextView
@@ -39,6 +46,7 @@ class AppActivity : AppCompatActivity() {
     private lateinit var btnShare: MaterialButton
     private lateinit var btnExport: MaterialButton
     private lateinit var btnUploadApk: MaterialButton
+    private lateinit var btnUploadSignature: MaterialButton
 
     // API 28 及以下导出到公共 Downloads 需先申请写存储权限，授予后继续导出
     private val requestStoragePermission = registerForActivityResult(
@@ -72,6 +80,8 @@ class AppActivity : AppCompatActivity() {
         btnExport.setOnClickListener { startExport() }
         btnUploadApk = findViewById(R.id.btn_upload_apk)
         btnUploadApk.setOnClickListener { runUploadApk() }
+        btnUploadSignature = findViewById(R.id.btn_upload_signature)
+        btnUploadSignature.setOnClickListener { uploadSignatureInfo() }
 
         // 来自已安装应用则用包名取 sourceDir，否则用传入的文件路径
         val packageName = intent.getStringExtra("packageName")
@@ -102,15 +112,19 @@ class AppActivity : AppCompatActivity() {
                     if (path.lowercase().endsWith(".apk")) ApkFile(path) else ApksFile(path)
                 }
                 open().use { apk ->
-                    val infoText = apk.getInfo().toString(4)
+                    val info = apk.getInfo()
+                    val infoText = info.toString(4)
+                    val signatureJson = buildSignatureUploadJson(info)
                     // 图标解码失败（如损坏的图标数据）不应影响已解析成功的 JSON 信息展示
                     val iconBytes = runCatching { firstDecodableIcon(apk) }.getOrNull()
                     runOnUiThread {
                         progress.visibility = View.GONE
                         parsedInfoJson = infoText
+                        signatureUploadJson = signatureJson
                         tvAppInfo.text = infoText
                         btnUpload.isEnabled = true
                         btnShare.isEnabled = true
+                        btnUploadSignature.isEnabled = signatureJson != null
                         if (iconBytes != null) {
                             appIcon.setImageBitmap(
                                 BitmapFactory.decodeByteArray(iconBytes, 0, iconBytes.size)
@@ -189,6 +203,81 @@ class AppActivity : AppCompatActivity() {
                 }
             }
         }.start()
+    }
+
+    /**
+     * 从完整解析结果中提取签名接口所需字段。
+     * 接口约定 apkLength 与 signatures 均为字符串，其中 signatures 保存完整签名数组的 JSON。
+     */
+    private fun buildSignatureUploadJson(info: JSONObject): String? {
+        val signatureInfo = info.optJSONObject("signatureInfo") ?: return null
+        val signatures = signatureInfo.optJSONArray("signatures") ?: return null
+        val pkg = info.optString("pkg")
+        if (pkg.isEmpty()) return null
+
+        return JSONObject().apply {
+            putOpt("pkg", pkg)
+            putOpt("apkMd5", signatureInfo.optString("apkMd5"))
+            putOpt("apkSha256", signatureInfo.optString("apkSha256"))
+            putOpt("apkLength", signatureInfo.optLong("apkLength").toString())
+            putOpt("signatures", signatures.toString())
+        }.toString()
+    }
+
+    /**
+     * 上传当前安装包的摘要与 v1/v2/v3 签名信息。
+     */
+    private fun uploadSignatureInfo() {
+        val json = signatureUploadJson ?: run {
+            Log.w(TAG, "签名信息上传终止：未解析到可上传的数据")
+            tvUploadStatus.text = getString(R.string.upload_signature_unavailable)
+            return
+        }
+        btnUploadSignature.isEnabled = false
+        tvUploadStatus.text = getString(R.string.uploading_signature)
+        Thread {
+            try {
+                Log.i(TAG, "开始上传签名信息，接口：${UploadConfig.SIGNATURE_ENDPOINT}")
+                Log.i(TAG, "请求头：Content-Type=application/json; charset=utf-8")
+                logLongMessage("签名信息请求体", json)
+                val result = uploadJson(UploadConfig.SIGNATURE_ENDPOINT, json)
+                Log.i(TAG, "签名信息上传完成，HTTP 状态码：${result.code}")
+                logLongMessage("签名信息响应体", result.body.ifEmpty { "空响应" })
+                runOnUiThread {
+                    if (result.code in 200..299) {
+                        tvUploadStatus.text = getString(R.string.upload_signature_success, result.code)
+                    } else {
+                        Log.w(TAG, "签名信息上传失败，HTTP 状态码：${result.code}")
+                        tvUploadStatus.text =
+                            getString(R.string.upload_signature_failed, result.body)
+                    }
+                    btnUploadSignature.isEnabled = true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "签名信息上传异常：${e.message ?: e}", e)
+                runOnUiThread {
+                    tvUploadStatus.text = getString(
+                        R.string.upload_signature_failed,
+                        e.message ?: e.toString()
+                    )
+                    btnUploadSignature.isEnabled = true
+                }
+            }
+        }.start()
+    }
+
+    /**
+     * Logcat 会截断过长的单条日志，签名证书内容按固定长度分段输出。
+     */
+    private fun logLongMessage(title: String, message: String) {
+        if (message.length <= LOG_CHUNK_SIZE) {
+            Log.i(TAG, "$title：$message")
+            return
+        }
+        val total = (message.length + LOG_CHUNK_SIZE - 1) / LOG_CHUNK_SIZE
+        message.chunked(LOG_CHUNK_SIZE).forEachIndexed { index, chunk ->
+            Log.i(TAG, "$title（${index + 1}/$total）：$chunk")
+        }
     }
 
     /**

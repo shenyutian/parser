@@ -16,7 +16,7 @@ public class ApkFileTest {
     @Test
     public void testParserMeta() throws IOException {
         String path = getClass().getClassLoader().getResource("apks/Twitter_v7.93.2.apk").getPath();
-        try (ApkFile apkFile = new ApkFile(path)) {
+        try (ApkFile apkFile = new ApkFile("/Users/zhulei/Downloads/com.dark.havensurvivors_1783662981690/base.apk")) {
             apkFile.setPreferredLocale(Locale.ENGLISH);
             ApkMeta apkMeta = apkFile.getApkMeta();
             assertEquals("Twitter", apkMeta.getLabel());

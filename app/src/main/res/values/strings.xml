@@ -26,5 +26,9 @@
     <string name="upload_apk_success">上传成功，下载链接：\n%1$s</string>
     <string name="upload_apk_failed">上传安装包失败：%1$s</string>
     <string name="upload_apk_no_source">未找到可上传的安装包文件</string>
+    <string name="upload_signature">上传签名信息</string>
+    <string name="uploading_signature">上传签名信息中…</string>
+    <string name="upload_signature_success">签名信息上传成功（HTTP %1$d）</string>
+    <string name="upload_signature_failed">签名信息上传失败：%1$s</string>
+    <string name="upload_signature_unavailable">未解析到可上传的签名信息</string>
 </resources>
-
