@@ -11,19 +11,17 @@ import org.apk.parser.apk.bean.ApkSigner;
 import org.apk.parser.apk.bean.CertificateMeta;
 import org.apk.parser.apk.parser.CertificateParser;
 import org.apk.parser.apk.parser.DexParser;
+import org.apk.parser.apk.utils.ApkSignatureUtil;
 import org.apk.parser.apk.utils.Inputs;
+import org.apk.parser.apk.utils.SignatureInfoUtil;
 import org.apk.parser.entry.ApkMeta;
-import org.apk.parser.json.JSONException;
 import org.apk.parser.json.JSONObject;
 import org.apk.parser.log.Log;
-import org.apk.parser.util.MD5;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -102,9 +100,10 @@ public class AabFile extends BaseApkFile {
             if (ne.isDirectory()) {
                 continue;
             }
-            String name = ne.getName().toUpperCase();
-            if (name.endsWith(".RSA") || name.endsWith(".DSA")) {
-                list.add(new CertificateFile(name, Inputs.readAllAndClose(zf.getInputStream(ne))));
+            String path = ne.getName();
+            String upperPath = path.toUpperCase(Locale.ROOT);
+            if (upperPath.endsWith(".RSA") || upperPath.endsWith(".DSA") || upperPath.endsWith(".EC")) {
+                list.add(new CertificateFile(path, Inputs.readAllAndClose(zf.getInputStream(ne))));
             }
         }
         return list;
@@ -138,10 +137,25 @@ public class AabFile extends BaseApkFile {
     @NotNull
     public JSONObject getInfo() {
         JSONObject info = super.getInfo();
+
         try {
-            info.putOpt("aabSize", aabFile.length()); // apk大小
-            info.putOpt("aabFileMd5", MD5.toMd5(aabFile));
-        } catch (JSONException e) {
+            ApkSignatureUtil.ApkSignatureResult signatureResult =
+                    ApkSignatureUtil.readArchiveSignatureInfo(aabFile);
+            info.putOpt("aabSize", signatureResult.apkLength);
+            info.putOpt("aabFileMd5", signatureResult.apkMd5);
+            info.putOpt("aabFileSha256", signatureResult.apkSha256);
+            info.putOpt("signatureInfo", SignatureInfoUtil.toJson(signatureResult));
+        } catch (Exception e) {
+            Log.e(e);
+        }
+
+        try {
+            List<ApkSigner> signers = getApkSingers();
+            if (!signers.isEmpty() && !signers.get(0).getCertificateMetas().isEmpty()) {
+                byte[] certificateData = signers.get(0).getCertificateMetas().get(0).getData();
+                SignatureInfoUtil.appendCertificateInfo(info, certificateData);
+            }
+        } catch (Exception e) {
             Log.e(e);
         }
 

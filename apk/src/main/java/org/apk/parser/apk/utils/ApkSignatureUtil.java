@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -27,8 +27,8 @@ import java.util.zip.ZipInputStream;
  * APK 签名信息解析工具：一次性读取 v1（JAR）、v2、v3 各方案的签名（签名 hex + 签名主体 + 发行者），
  * 以及 apk 文件大小、MD5、SHA-256。
  *
- * <p>同时支持从 {@link File}（v1 用 {@link JarFile}、v2/v3 用内存映射）与从 byte[]（v1 用
- * {@link JarInputStream}、v2/v3 用 {@link ByteBuffer}）两种数据源解析，v2/v3 的签名块查找核心统一基于
+ * <p>同时支持从 {@link File}（v1 用 ZIP 签名块、v2/v3 用内存映射）与从 byte[]（v1 用
+ * ZIP 签名块、v2/v3 用 {@link ByteBuffer}）两种数据源解析，v2/v3 的签名块查找核心统一基于
  * {@link ByteBuffer} 随机访问，与数据来源解耦。
  */
 public final class ApkSignatureUtil {
@@ -112,6 +112,41 @@ public final class ApkSignatureUtil {
         String apkMd5 = fileDigestHex(apkFile, "MD5");
         String apkSha256 = fileDigestHex(apkFile, "SHA-256");
         return new ApkSignatureResult(apkLength, apkMd5, apkSha256, readAllSignatures(apkFile));
+    }
+
+    /**
+     * 读取 ZIP 容器自身以及容器内 APK 条目的全部签名信息。
+     * 容器自身按 v1 解析，内部 APK 继续解析 v1/v2/v3，并按方案和证书去重。
+     */
+    public static ApkSignatureResult readArchiveSignatureInfo(File archiveFile) throws Exception {
+        long archiveLength = archiveFile.length();
+        String archiveMd5 = fileDigestHex(archiveFile, "MD5");
+        String archiveSha256 = fileDigestHex(archiveFile, "SHA-256");
+        List<SignatureInfo> signatures = new ArrayList<>(readAllSignatures(archiveFile));
+        Set<String> seen = new HashSet<>();
+        for (SignatureInfo signature : signatures) {
+            seen.add(signature.scheme + ':' + signature.signature);
+        }
+
+        try (ZipFile zipFile = new ZipFile(archiveFile)) {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory() || !entry.getName().toLowerCase(Locale.ROOT).endsWith(".apk")) {
+                    continue;
+                }
+                try (InputStream inputStream = zipFile.getInputStream(entry)) {
+                    for (SignatureInfo signature : readAllSignatures(readAll(inputStream))) {
+                        if (seen.add(signature.scheme + ':' + signature.signature)) {
+                            signatures.add(signature);
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // 单个 APK 条目损坏时继续解析其他条目。
+                }
+            }
+        }
+        return new ApkSignatureResult(archiveLength, archiveMd5, archiveSha256, signatures);
     }
 
     /**
@@ -211,30 +246,39 @@ public final class ApkSignatureUtil {
     // ==================== v1（JAR）签名 ====================
 
     private static List<X509Certificate> readV1SignatureCertificates(File apkFile) throws Exception {
-        try (JarFile jarFile = new JarFile(apkFile, true)) {
-            byte[] buffer = new byte[8192];
-            Enumeration<JarEntry> entries = jarFile.entries();
+        // AAB 的 META-INF 签名可能不是按 JarFile 的校验顺序排列，直接解析 PKCS#7
+        // 签名块比读取首个内容条目更稳定，也能收集多个签名证书。
+        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        List<X509Certificate> result = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
 
+        try (ZipFile zipFile = new ZipFile(apkFile)) {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (entry.isDirectory() || entry.getName().startsWith("META-INF/")) {
+                ZipEntry entry = entries.nextElement();
+                String name = entry.getName().toUpperCase(Locale.ROOT);
+                if (entry.isDirectory() || !name.startsWith("META-INF/")
+                        || !(name.endsWith(".RSA") || name.endsWith(".DSA") || name.endsWith(".EC"))) {
                     continue;
                 }
 
-                try (InputStream inputStream = jarFile.getInputStream(entry)) {
-                    while (inputStream.read(buffer) != -1) {
-                        // 完整读取该条目，JarFile 才会校验并填充证书信息。
+                try (InputStream inputStream = zipFile.getInputStream(entry)) {
+                    byte[] block = readAll(inputStream);
+                    for (Certificate certificate : certificateFactory.generateCertificates(
+                            new ByteArrayInputStream(block))) {
+                        if (certificate instanceof X509Certificate) {
+                            X509Certificate x509 = (X509Certificate) certificate;
+                            if (seen.add(bytesToHex(x509.getEncoded()))) {
+                                result.add(x509);
+                            }
+                        }
                     }
-                }
-
-                List<X509Certificate> certificates = toX509(entry.getCertificates());
-                if (!certificates.isEmpty()) {
-                    return certificates;
+                } catch (Exception ignored) {
+                    // 非法签名块不影响其他签名块的解析。
                 }
             }
         }
-
-        return new ArrayList<>();
+        return result;
     }
 
     private static List<X509Certificate> readV1SignatureCertificates(byte[] apkData) throws Exception {
@@ -247,7 +291,7 @@ public final class ApkSignatureUtil {
         try (ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(apkData))) {
             ZipEntry entry;
             while ((entry = zipInputStream.getNextEntry()) != null) {
-                String name = entry.getName().toUpperCase();
+                String name = entry.getName().toUpperCase(Locale.ROOT);
                 if (!name.startsWith("META-INF/")
                         || !(name.endsWith(".RSA") || name.endsWith(".DSA") || name.endsWith(".EC"))) {
                     continue;
@@ -280,19 +324,6 @@ public final class ApkSignatureUtil {
             out.write(buffer, 0, read);
         }
         return out.toByteArray();
-    }
-
-    private static List<X509Certificate> toX509(Certificate[] certificates) {
-        List<X509Certificate> result = new ArrayList<>();
-        if (certificates == null) {
-            return result;
-        }
-        for (Certificate certificate : certificates) {
-            if (certificate instanceof X509Certificate) {
-                result.add((X509Certificate) certificate);
-            }
-        }
-        return result;
     }
 
     // ==================== ZIP / APK Signing Block 定位（ByteBuffer 版） ====================

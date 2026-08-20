@@ -12,24 +12,21 @@ import org.apk.parser.apk.struct.signingv2.SignerBlock;
 import org.apk.parser.apk.struct.zip.EOCD;
 import org.apk.parser.apk.utils.ApkSignatureUtil;
 import org.apk.parser.apk.utils.Buffers;
+import org.apk.parser.apk.utils.SignatureInfoUtil;
 import org.apk.parser.apk.utils.Unsigned;
 import org.apk.parser.base.BaseApkFile;
 import org.apk.parser.entry.ApkMeta;
 import org.apk.parser.entry.DexClass;
 import org.apk.parser.entry.Icon;
 import org.apk.parser.entry.IconFace;
-import org.apk.parser.json.JSONArray;
 import org.apk.parser.json.JSONException;
 import org.apk.parser.json.JSONObject;
 import org.apk.parser.log.Log;
-import org.apk.parser.util.MD5;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -191,17 +188,7 @@ public abstract class AbstractApkFile extends BaseApkFile implements Closeable {
                 sign_data = getApkV2Singers().get(0).getCertificateMetas().get(0).getData();
             }
 
-            Certificate certificate = java.security.cert.CertificateFactory.getInstance("X.509")
-                    .generateCertificate(new java.io.ByteArrayInputStream(sign_data));
-
-            Base64.Encoder encoder = Base64.getEncoder();
-
-
-            PublicKey publicKey = certificate.getPublicKey();
-            jsonObject.putOpt("sign", MD5.toHexString(sign_data).replace("\n", ""));
-            jsonObject.putOpt("SHA1", encoder.encodeToString(MD5.toSha1(publicKey.getEncoded())));
-            jsonObject.putOpt("SHA256", encoder.encodeToString(MD5.toSha256(publicKey.getEncoded())));
-            jsonObject.putOpt("fbkey", encoder.encodeToString(MD5.toSha1(certificate.getEncoded())));
+            SignatureInfoUtil.appendCertificateInfo(jsonObject, sign_data);
 
         } catch (Exception e) {
             Log.e(e);
@@ -211,7 +198,7 @@ public abstract class AbstractApkFile extends BaseApkFile implements Closeable {
             // 补充更详细的签名信息：v1/v2/v3 各方案的签名 hex、签名主体、发行者，以及 apk 文件大小与摘要
             ApkSignatureUtil.ApkSignatureResult signatureResult = readSignatureInfo();
             if (signatureResult != null) {
-                jsonObject.putOpt("signatureInfo", signatureResultToJson(signatureResult));
+                jsonObject.putOpt("signatureInfo", SignatureInfoUtil.toJson(signatureResult));
             }
         } catch (Exception e) {
             Log.e(e);
@@ -226,29 +213,6 @@ public abstract class AbstractApkFile extends BaseApkFile implements Closeable {
      */
     protected ApkSignatureUtil.ApkSignatureResult readSignatureInfo() throws Exception {
         return null;
-    }
-
-    /**
-     * 把 {@link ApkSignatureUtil.ApkSignatureResult} 转成结构化 JSON。
-     * 注意：自定义 JSON 库不会自动序列化 List/bean，signatures 必须手动构建 JSONArray。
-     */
-    private static JSONObject signatureResultToJson(ApkSignatureUtil.ApkSignatureResult result) throws JSONException {
-        JSONObject json = new JSONObject();
-        json.putOpt("apkLength", result.apkLength);
-        json.putOpt("apkMd5", result.apkMd5);
-        json.putOpt("apkSha256", result.apkSha256);
-
-        JSONArray signatures = new JSONArray();
-        for (ApkSignatureUtil.SignatureInfo info : result.signatures) {
-            JSONObject item = new JSONObject();
-            item.putOpt("scheme", info.scheme);
-            item.putOpt("principal", info.principal);
-            item.putOpt("issuer", info.issuer);
-            item.putOpt("signature", info.signature);
-            signatures.put(item);
-        }
-        json.putOpt("signatures", signatures);
-        return json;
     }
 
     /**
