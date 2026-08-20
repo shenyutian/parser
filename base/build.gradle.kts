@@ -3,6 +3,6 @@ plugins {
 }
 
 group = "org.apk.parser"
-version = "1.3-SNAPSHOT"
+version = "1.4-SNAPSHOT"
 
 apply(from = rootProject.file("maven-publish.gradle"))

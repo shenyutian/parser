@@ -150,26 +150,7 @@ public class ByteArrayApkFile extends AbstractApkFile implements Closeable {
             jsonObject.putOpt("apkSize", apkData.length);
             jsonObject.putOpt("apkFileMd5", MD5.toMd5(apkData));
             jsonObject.putOpt("apkFileSha256", MD5.toSha256Hex(apkData));
-
-            // 统计 zip 条目数量，以及所有条目解压后的大小总和
-            long zipEntryCount = 0;
-            long zipUncompressedSize = 0;
-            try (InputStream in = new ByteArrayInputStream(apkData);
-                 ZipInputStream zis = new ZipInputStream(in)) {
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    zipEntryCount++;
-                    long size = entry.getSize();
-                    if (size > 0) {
-                        zipUncompressedSize += size;
-                    }
-                }
-            }
-            jsonObject.putOpt("zipEntryCount", zipEntryCount);
-            jsonObject.putOpt("zipUncompressedSize", zipUncompressedSize);
-        } catch (JSONException e) {
-            Log.e(e);
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.e(e);
         }
 

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "org.apk.parser"
-version = "1.1-SNAPSHOT"
+version = "1.4-SNAPSHOT"
 
 dependencies {
     implementation(project(":base"))

@@ -8,7 +8,7 @@ plugins {
 
 allprojects {
     group = "org.apk.parser"
-    version = "1.0.0"
+    version = "1.4.0"
 
     repositories {
         mavenCentral()

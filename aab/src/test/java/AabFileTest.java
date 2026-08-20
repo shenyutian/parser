@@ -47,6 +47,8 @@ class AabFileTest {
         AabFile aabFile = new AabFile(path);
         ApkMeta ApkMeta = aabFile.getApkMeta();
         Log.d("ApkMeta = " + ApkMeta);
+        JSONObject apkInfo = aabFile.getInfo();
+        Log.d("apkInfo = " + apkInfo);
     }
 
     @Test
