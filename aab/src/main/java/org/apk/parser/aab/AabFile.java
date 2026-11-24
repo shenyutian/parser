@@ -143,6 +143,7 @@ public class AabFile extends BaseApkFile {
                     ApkSignatureUtil.readArchiveSignatureInfo(aabFile);
             info.putOpt("aabSize", signatureResult.apkLength);
             info.putOpt("aabFileMd5", signatureResult.apkMd5);
+            info.putOpt("aabFileSha1", signatureResult.apkSha1);
             info.putOpt("aabFileSha256", signatureResult.apkSha256);
             info.putOpt("signatureInfo", SignatureInfoUtil.toJson(signatureResult));
         } catch (Exception e) {

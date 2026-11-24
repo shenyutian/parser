@@ -44,7 +44,8 @@ public final class ApkSignatureUtil {
     }
 
     /**
-     * 单个签名证书的信息：签名方案、证书 DER 的 hex 字符串、签名主体（Subject DN）与发行者（Issuer DN）。
+     * 单个签名证书的信息：签名方案、证书 DER 的 hex 字符串、签名主体（Subject DN）与发行者（Issuer DN），
+     * 以及证书 DER 数据的 MD5、SHA-1、SHA-256 摘要（均为 hex 字符串）。
      */
     public static final class SignatureInfo {
         /** 签名方案：v1（JAR）、v2、v3。 */
@@ -55,12 +56,22 @@ public final class ApkSignatureUtil {
         public final String principal;
         /** 发行者（证书 Issuer DN）。 */
         public final String issuer;
+        /** 证书 DER 数据的 MD5 摘要（hex 字符串）。 */
+        public final String md5;
+        /** 证书 DER 数据的 SHA-1 摘要（hex 字符串）。 */
+        public final String sha1;
+        /** 证书 DER 数据的 SHA-256 摘要（hex 字符串）。 */
+        public final String sha256;
 
         private SignatureInfo(String scheme, X509Certificate certificate) throws Exception {
             this.scheme = scheme;
-            this.signature = bytesToHex(certificate.getEncoded());
+            byte[] encoded = certificate.getEncoded();
+            this.signature = bytesToHex(encoded);
             this.principal = certificate.getSubjectX500Principal().getName();
             this.issuer = certificate.getIssuerX500Principal().getName();
+            this.md5 = bytesDigestHex(encoded, "MD5");
+            this.sha1 = bytesDigestHex(encoded, "SHA-1");
+            this.sha256 = bytesDigestHex(encoded, "SHA-256");
         }
 
         @Override
@@ -68,26 +79,38 @@ public final class ApkSignatureUtil {
             return "SignatureInfo{scheme=" + scheme
                     + ", principal=" + principal
                     + ", issuer=" + issuer
+                    + ", md5=" + md5
+                    + ", sha1=" + sha1
+                    + ", sha256=" + sha256
                     + ", signature=" + signature + '}';
         }
     }
 
     /**
-     * APK 的整体签名信息：文件大小、MD5、SHA-256，以及 v1/v2/v3 各方案的签名列表。
+     * APK 的整体签名信息：文件大小、MD5、SHA-1、SHA-256，以及 v1/v2/v3 各方案的签名列表。
      */
     public static final class ApkSignatureResult {
         /** APK 文件大小（字节）。 */
         public final long apkLength;
         /** APK 文件 MD5（hex 字符串）。 */
         public final String apkMd5;
+        /** APK 文件 SHA-1（hex 字符串）。 */
+        public final String apkSha1;
         /** APK 文件 SHA-256（hex 字符串）。 */
         public final String apkSha256;
         /** v1/v2/v3 各方案的签名信息列表。 */
         public final List<SignatureInfo> signatures;
 
-        private ApkSignatureResult(long apkLength, String apkMd5, String apkSha256, List<SignatureInfo> signatures) {
+        private ApkSignatureResult(
+                long apkLength,
+                String apkMd5,
+                String apkSha1,
+                String apkSha256,
+                List<SignatureInfo> signatures
+        ) {
             this.apkLength = apkLength;
             this.apkMd5 = apkMd5;
+            this.apkSha1 = apkSha1;
             this.apkSha256 = apkSha256;
             this.signatures = signatures;
         }
@@ -96,6 +119,7 @@ public final class ApkSignatureUtil {
         public String toString() {
             return "ApkSignatureResult{apkLength=" + apkLength
                     + ", apkMd5=" + apkMd5
+                    + ", apkSha1=" + apkSha1
                     + ", apkSha256=" + apkSha256
                     + ", signatures=" + signatures + '}';
         }
@@ -110,8 +134,9 @@ public final class ApkSignatureUtil {
     public static ApkSignatureResult readApkSignatureInfo(File apkFile) throws Exception {
         long apkLength = apkFile.length();
         String apkMd5 = fileDigestHex(apkFile, "MD5");
+        String apkSha1 = fileDigestHex(apkFile, "SHA-1");
         String apkSha256 = fileDigestHex(apkFile, "SHA-256");
-        return new ApkSignatureResult(apkLength, apkMd5, apkSha256, readAllSignatures(apkFile));
+        return new ApkSignatureResult(apkLength, apkMd5, apkSha1, apkSha256, readAllSignatures(apkFile));
     }
 
     /**
@@ -121,6 +146,7 @@ public final class ApkSignatureUtil {
     public static ApkSignatureResult readArchiveSignatureInfo(File archiveFile) throws Exception {
         long archiveLength = archiveFile.length();
         String archiveMd5 = fileDigestHex(archiveFile, "MD5");
+        String archiveSha1 = fileDigestHex(archiveFile, "SHA-1");
         String archiveSha256 = fileDigestHex(archiveFile, "SHA-256");
         List<SignatureInfo> signatures = new ArrayList<>(readAllSignatures(archiveFile));
         Set<String> seen = new HashSet<>();
@@ -146,7 +172,7 @@ public final class ApkSignatureUtil {
                 }
             }
         }
-        return new ApkSignatureResult(archiveLength, archiveMd5, archiveSha256, signatures);
+        return new ApkSignatureResult(archiveLength, archiveMd5, archiveSha1, archiveSha256, signatures);
     }
 
     /**
@@ -179,8 +205,9 @@ public final class ApkSignatureUtil {
     public static ApkSignatureResult readApkSignatureInfo(byte[] apkData) throws Exception {
         long apkLength = apkData.length;
         String apkMd5 = bytesDigestHex(apkData, "MD5");
+        String apkSha1 = bytesDigestHex(apkData, "SHA-1");
         String apkSha256 = bytesDigestHex(apkData, "SHA-256");
-        return new ApkSignatureResult(apkLength, apkMd5, apkSha256, readAllSignatures(apkData));
+        return new ApkSignatureResult(apkLength, apkMd5, apkSha1, apkSha256, readAllSignatures(apkData));
     }
 
     /**

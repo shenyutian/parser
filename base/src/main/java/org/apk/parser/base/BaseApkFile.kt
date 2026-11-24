@@ -68,6 +68,7 @@ abstract class BaseApkFile {
             results.forEach { (key, value) ->
                 jsonObject.putOpt(key, value)
             }
+
         } catch (e: Exception) {
             Log.e(e);
         }

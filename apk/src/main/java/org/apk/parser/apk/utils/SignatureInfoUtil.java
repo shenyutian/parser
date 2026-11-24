@@ -41,6 +41,7 @@ public final class SignatureInfoUtil {
         JSONObject json = new JSONObject();
         json.putOpt("apkLength", result.apkLength);
         json.putOpt("apkMd5", result.apkMd5);
+        json.putOpt("apkSha1", result.apkSha1);
         json.putOpt("apkSha256", result.apkSha256);
 
         JSONArray signatures = new JSONArray();
@@ -49,6 +50,9 @@ public final class SignatureInfoUtil {
             item.putOpt("scheme", info.scheme);
             item.putOpt("principal", info.principal);
             item.putOpt("issuer", info.issuer);
+            item.putOpt("md5", info.md5);
+            item.putOpt("sha1", info.sha1);
+            item.putOpt("sha256", info.sha256);
             item.putOpt("signature", info.signature);
             signatures.put(item);
         }

@@ -218,6 +218,7 @@ class AppActivity : AppCompatActivity() {
         return JSONObject().apply {
             putOpt("pkg", pkg)
             putOpt("apkMd5", signatureInfo.optString("apkMd5"))
+            putOpt("apkSha1", signatureInfo.optString("apkSha1"))
             putOpt("apkSha256", signatureInfo.optString("apkSha256"))
             putOpt("apkLength", signatureInfo.optLong("apkLength").toString())
             putOpt("signatures", signatures.toString())
